@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="GPSMapsApp" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>Ruta de prueba Medellin</name>
+    <trkseg>
+      <trkpt lat="6.267600" lon="-75.568500"><ele>1490</ele><time>2026-10-01T15:00:00Z</time></trkpt>
+      <trkpt lat="6.267781" lon="-75.568350"><ele>1490</ele><time>2026-10-01T15:00:12Z</time></trkpt>
+      <trkpt lat="6.267960" lon="-75.568208"><ele>1490</ele><time>2026-10-01T15:00:24Z</time></trkpt>
+      <trkpt lat="6.268135" lon="-75.568073"><ele>1490</ele><time>2026-10-01T15:00:36Z</time></trkpt>
+      <trkpt lat="6.268304" lon="-75.567943"><ele>1490</ele><time>2026-10-01T15:00:48Z</time></trkpt>
+      <trkpt lat="6.268466" lon="-75.567818"><ele>1490</ele><time>2026-10-01T15:01:00Z</time></trkpt>
+      <trkpt lat="6.268620" lon="-75.567695"><ele>1490</ele><time>2026-10-01T15:01:12Z</time></trkpt>
+      <trkpt lat="6.268766" lon="-75.567572"><ele>1490</ele><time>2026-10-01T15:01:24Z</time></trkpt>
+      <trkpt lat="6.268904" lon="-75.567447"><ele>1490</ele><time>2026-10-01T15:01:36Z</time></trkpt>
+      <trkpt lat="6.269035" lon="-75.567317"><ele>1490</ele><time>2026-10-01T15:01:48Z</time></trkpt>
+      <trkpt lat="6.269160" lon="-75.567182"><ele>1490</ele><time>2026-10-01T15:02:00Z</time></trkpt>
+      <trkpt lat="6.269281" lon="-75.567040"><ele>1490</ele><time>2026-10-01T15:02:12Z</time></trkpt>
+      <trkpt lat="6.269400" lon="-75.566890"><ele>1490</ele><time>2026-10-01T15:02:24Z</time></trkpt>
+      <trkpt lat="6.269519" lon="-75.566732"><ele>1490</ele><time>2026-10-01T15:02:36Z</time></trkpt>
+      <trkpt lat="6.269640" lon="-75.566566"><ele>1490</ele><time>2026-10-01T15:02:48Z</time></trkpt>
+      <trkpt lat="6.269765" lon="-75.566392"><ele>1490</ele><time>2026-10-01T15:03:00Z</time></trkpt>
+      <trkpt lat="6.269896" lon="-75.566213"><ele>1490</ele><time>2026-10-01T15:03:12Z</time></trkpt>
+      <trkpt lat="6.270034" lon="-75.566030"><ele>1490</ele><time>2026-10-01T15:03:24Z</time></trkpt>
+      <trkpt lat="6.270180" lon="-75.565845"><ele>1490</ele><time>2026-10-01T15:03:36Z</time></trkpt>
+      <trkpt lat="6.270334" lon="-75.565660"><ele>1490</ele><time>2026-10-01T15:03:48Z</time></trkpt>
+      <trkpt lat="6.270496" lon="-75.565477"><ele>1490</ele><time>2026-10-01T15:04:00Z</time></trkpt>
+      <trkpt lat="6.270665" lon="-75.565298"><ele>1490</ele><time>2026-10-01T15:04:12Z</time></trkpt>
+      <trkpt lat="6.270840" lon="-75.565124"><ele>1490</ele><time>2026-10-01T15:04:24Z</time></trkpt>
+      <trkpt lat="6.271019" lon="-75.564958"><ele>1490</ele><time>2026-10-01T15:04:36Z</time></trkpt>
+      <trkpt lat="6.271200" lon="-75.564800"><ele>1490</ele><time>2026-10-01T15:04:48Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>
