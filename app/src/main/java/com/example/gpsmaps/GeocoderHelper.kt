@@ -5,6 +5,7 @@ import android.location.Address
 import android.location.Geocoder
 import android.os.Build
 import com.google.android.gms.maps.model.LatLng
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -34,7 +35,7 @@ object GeocoderHelper {
                     try {
                         @Suppress("DEPRECATION")
                         geocoder.getFromLocationName(query, 1)?.firstOrNull()
-                    } catch (e: Exception) { null }
+                    } catch (e: CancellationException) { throw e } catch (e: Exception) { null }
                 }
             }
         return address?.let { LatLng(it.latitude, it.longitude) }
@@ -62,7 +63,7 @@ object GeocoderHelper {
                     try {
                         @Suppress("DEPRECATION")
                         geocoder.getFromLocation(point.latitude, point.longitude, 1)?.firstOrNull()
-                    } catch (e: Exception) { null }
+                    } catch (e: CancellationException) { throw e } catch (e: Exception) { null }
                 }
             }
         return address?.getAddressLine(0)

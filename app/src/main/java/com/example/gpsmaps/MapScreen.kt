@@ -2,7 +2,10 @@ package com.example.gpsmaps
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -12,9 +15,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -29,15 +35,6 @@ private fun hasLocationPermission(context: Context): Boolean =
         PackageManager.PERMISSION_GRANTED ||
     ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
         PackageManager.PERMISSION_GRANTED
-
-/** Acepta "6.2676, -75.5685" (punto como decimal). Si no es válido devuelve null. */
-private fun parseLatLng(text: String): LatLng? {
-    val p = text.trim().split(Regex("[,;\\s]+")).filter { it.isNotEmpty() }
-    if (p.size != 2) return null
-    val lat = p[0].toDoubleOrNull() ?: return null
-    val lng = p[1].toDoubleOrNull() ?: return null
-    return if (lat in -90.0..90.0 && lng in -180.0..180.0) LatLng(lat, lng) else null
-}
 
 @Composable
 fun MapScreen(vm: MapViewModel = viewModel()) {
@@ -54,6 +51,19 @@ fun MapScreen(vm: MapViewModel = viewModel()) {
             result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         if (hasPermission) vm.locateOnce()
     }
+    // Si el usuario concede el permiso desde Ajustes, lo detectamos al volver a la app
+    LifecycleResumeEffect(Unit) {
+        val now = hasLocationPermission(context)
+        if (now && !hasPermission) vm.locateOnce()
+        hasPermission = now
+        onPauseOrDispose { }
+    }
+    fun requestPermission() = permissionLauncher.launch(
+        arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+    )
     LaunchedEffect(Unit) {
         if (hasPermission) vm.locateOnce()
         else permissionLauncher.launch(
@@ -79,9 +89,24 @@ fun MapScreen(vm: MapViewModel = viewModel()) {
     var target by remember { mutableStateOf<LatLng?>(null) }
     var revealed by remember { mutableStateOf(false) }
 
+    // La cámara sigue al usuario hasta que él mueve el mapa con el dedo
+    var follow by remember { mutableStateOf(true) }
+    LaunchedEffect(cameraState.isMoving) {
+        if (cameraState.isMoving &&
+            cameraState.cameraMoveStartedReason == CameraMoveStartedReason.GESTURE
+        ) follow = false
+    }
+
+    // Alto de las tarjetas para que el mapa no ponga controles ni el logo de Google debajo
+    val density = LocalDensity.current
+    var topCardHeight by remember { mutableStateOf(0.dp) }
+    var bottomCardHeight by remember { mutableStateOf(0.dp) }
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     // La cámara sigue al usuario solo en la pestaña de tracking
     LaunchedEffect(state.current) {
-        if (tab == 0) {
+        if (tab == 0 && follow) {
             state.current?.let {
                 cameraState.animate(CameraUpdateFactory.newLatLngZoom(it, 17f), 800)
             }
@@ -94,6 +119,10 @@ fun MapScreen(vm: MapViewModel = viewModel()) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraState,
+            contentPadding = PaddingValues(
+                top = statusBarTop + 12.dp + topCardHeight,
+                bottom = navBarBottom + 12.dp + bottomCardHeight
+            ),
             properties = MapProperties(
                 isMyLocationEnabled = hasPermission,   // punto azul
                 mapType = mapType
@@ -156,8 +185,10 @@ fun MapScreen(vm: MapViewModel = viewModel()) {
         Card(
             modifier = Modifier
                 .align(Alignment.TopCenter)
+                .statusBarsPadding()
                 .padding(12.dp)
                 .fillMaxWidth()
+                .onSizeChanged { topCardHeight = with(density) { it.height.toDp() } }
         ) {
             Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
@@ -187,8 +218,10 @@ fun MapScreen(vm: MapViewModel = viewModel()) {
         Card(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
                 .padding(12.dp)
                 .fillMaxWidth()
+                .onSizeChanged { bottomCardHeight = with(density) { it.height.toDp() } }
         ) {
             Column {
                 TabRow(selectedTabIndex = tab) {
@@ -199,15 +232,43 @@ fun MapScreen(vm: MapViewModel = viewModel()) {
                 Column(Modifier.padding(12.dp)) {
                     if (tab == 0) {
                         // ----- Pestaña TRACKING -----
+                        if (!hasPermission) {
+                            Text(
+                                "Sin permiso de ubicación: el mapa funciona, pero no el GPS.",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                TextButton(onClick = { requestPermission() }) { Text("Dar permiso") }
+                                // Si lo negó dos veces, Android ya no muestra el diálogo: toca ir a Ajustes
+                                TextButton(onClick = {
+                                    context.startActivity(
+                                        Intent(
+                                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                            Uri.fromParts("package", context.packageName, null)
+                                        )
+                                    )
+                                }) { Text("Ajustes") }
+                            }
+                        }
                         Text(
                             "Distancia: %.0f m | Vel: %.1f km/h | Precisión: %.0f m"
                                 .format(state.distanceMeters, state.speedKmh, state.accuracyMeters),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         if (markers.size >= 2) {
-                            Text("Punto 1 → Punto 2: %.0f m".format(MapViewModel.distance(markers[0], markers[1])))
+                            Text("Punto 1 → Punto 2: %.0f m".format(distanceMeters(markers[0], markers[1])))
                         }
                         addressText?.let { Text("Último punto: $it") }
+                        if (!follow && state.current != null) {
+                            TextButton(onClick = {
+                                follow = true
+                                state.current?.let {
+                                    scope.launch {
+                                        cameraState.animate(CameraUpdateFactory.newLatLngZoom(it, 17f), 800)
+                                    }
+                                }
+                            }) { Text("Seguirme") }
+                        }
 
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -239,7 +300,7 @@ fun MapScreen(vm: MapViewModel = viewModel()) {
                         if (revealed) Text("📍 ${place.name}")
                         target?.let { t ->
                             markers.lastOrNull()?.let { guess ->
-                                Text("Tu marcador quedó a %.0f m del objetivo".format(MapViewModel.distance(guess, t)))
+                                Text("Tu marcador quedó a %.0f m del objetivo".format(distanceMeters(guess, t)))
                             }
                         }
 

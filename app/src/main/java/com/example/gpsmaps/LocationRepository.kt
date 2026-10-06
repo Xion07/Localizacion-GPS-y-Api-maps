@@ -6,6 +6,7 @@ import android.location.Location
 import android.os.Looper
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.CancellationTokenSource
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -19,10 +20,11 @@ class LocationRepository(context: Context) {
     /** Ubicación actual, una sola vez. */
     @SuppressLint("MissingPermission")
     suspend fun getCurrentLocation(): Location? = try {
-        client.getCurrentLocation(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            CancellationTokenSource().token
-        ).await()
+        // Si la corrutina se cancela, await(cts) también cancela la petición al GPS
+        val cts = CancellationTokenSource()
+        client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cts.token).await(cts)
+    } catch (e: CancellationException) {
+        throw e   // nunca tragarse la cancelación de la corrutina
     } catch (e: Exception) {
         null
     }
@@ -31,6 +33,8 @@ class LocationRepository(context: Context) {
     @SuppressLint("MissingPermission")
     suspend fun getLastLocation(): Location? = try {
         client.lastLocation.await()
+    } catch (e: CancellationException) {
+        throw e   // nunca tragarse la cancelación de la corrutina
     } catch (e: Exception) {
         null
     }
