@@ -4,10 +4,23 @@ App de ejemplo para exponer **Localización (GPS)** y **Google Maps API**:
 permisos, ubicación en tiempo real, marcadores, rutas, Geocoder y una actividad "Reto de coordenadas".
 
 ## Inicio rápido
-1. Abre la carpeta en Android Studio (File → Open) y espera el Sync de Gradle.
-2. Pega la key en `local.properties`:  `MAPS_API_KEY=tu_key`
-3. Crea un emulador con **Google Play** y pulsa Run.
-4. Fija la ubicación del emulador (⋯ → Location) o importa `ruta_prueba_medellin.gpx`.
+1. Abre la carpeta en Android Studio (File → Open).
+2. **JDK de Gradle:** *Settings → Build, Execution, Deployment → Build Tools → Gradle → Gradle JDK* → elige un **JDK 17 o 21**
+   (si no tienes, *Download JDK…* → versión 17). Gradle 8.10.2 no corre con Java 25, que es el que trae Android Studio reciente.
+   Luego espera el Sync de Gradle.
+3. Pide la key **por privado** al dueño y pégala en `local.properties` (en la raíz; Android Studio lo crea con `sdk.dir`):
+   `MAPS_API_KEY=tu_key` — sin comillas ni espacios.
+4. Crea un emulador con **Google APIs** o **Google Play** y pulsa Run.
+5. Fija la ubicación del emulador (⋯ → Location) o carga `ruta_prueba_medellin.gpx` en *Location → Routes* y dale Play.
+
+### Si algo falla
+| Síntoma | Causa y solución |
+|---|---|
+| Sync falla con "Unsupported class file major version" o similar | El Gradle JDK es Java 25: cámbialo a 17/21 (paso 2). |
+| El mapa sale gris o en blanco | Falta la key en `local.properties`, está mal copiada, o la key se restringió/borró. Mira Logcat filtrando por `Authorization failure`. |
+| No aparece el punto azul | Acepta el permiso de ubicación (o usa el botón **Dar permiso**) y fija una ubicación en el emulador. |
+
+Tests unitarios: `./gradlew testDebugUnitTest`.
 
 El paso a paso completo, con puntos de control, está en **`docs/GUIA_DIDACTICA.md`**.
 Qué hace cada pieza y por qué (para exponer): **`docs/EXPLICACION_PASOS.md`**.
