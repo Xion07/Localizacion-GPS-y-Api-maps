@@ -16,8 +16,9 @@ Explicación del código línea por línea: **`docs/EXPLICACION_CODIGO.md`**.
 ## Contenido
 | Ruta | Qué es |
 |---|---|
-| `app/src/main/java/com/example/gpsmaps/` | Código: `MainActivity`, `MapScreen`, `MapViewModel`, `LocationRepository`, `GeocoderHelper`, `ChallengePlaces` |
+| `app/src/main/java/com/example/gpsmaps/` | Código: `MainActivity`, `MapScreen`, `MapViewModel`, `LocationRepository`, `GeocoderHelper`, `GeoUtils`, `ChallengePlaces` |
 | `app/src/main/AndroidManifest.xml` | Permisos y API key |
+| `app/src/test/java/com/example/gpsmaps/` | Tests unitarios (`./gradlew testDebugUnitTest`): `parseLatLng` y `distanceMeters` |
 | `ruta_prueba_medellin.gpx` | Ruta para simular movimiento en el emulador |
 | `gradlew`, `gradle/wrapper/` | Gradle wrapper (Gradle 8.10.2) |
 | `local.properties` | Aquí va la key (no se sube a Git) |

@@ -20,10 +20,9 @@ class LocationRepository(context: Context) {
     /** Ubicación actual, una sola vez. */
     @SuppressLint("MissingPermission")
     suspend fun getCurrentLocation(): Location? = try {
-        client.getCurrentLocation(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            CancellationTokenSource().token
-        ).await()
+        // Si la corrutina se cancela, await(cts) también cancela la petición al GPS
+        val cts = CancellationTokenSource()
+        client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cts.token).await(cts)
     } catch (e: CancellationException) {
         throw e   // nunca tragarse la cancelación de la corrutina
     } catch (e: Exception) {

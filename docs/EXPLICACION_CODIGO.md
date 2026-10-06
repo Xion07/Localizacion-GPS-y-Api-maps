@@ -3,6 +3,7 @@
 
 Cómo leer este documento:
 - `L14` significa "línea 14" del archivo que se está explicando.
+- Los números de línea corresponden a la versión inicial del código. Tras las mejoras (edge-to-edge, modo "Seguirme", permisos, `GeoUtils.kt` y tests) pueden estar corridos unas líneas; el contenido explicado sigue vigente.
 - Los números de línea corresponden a los archivos del zip. Si editas un archivo, los números se mueven.
 - Si una línea es solo `}` o está vacía, no se explica (solo cierra un bloque).
 - Para exponer, no hace falta leer todo: usa el **mapa del proyecto** (sección 1) y el **flujo completo** (sección 5).
@@ -171,7 +172,7 @@ La **ficha de identidad** de la app: Android la lee antes de abrirla.
 - **L8** `ACCESS_COARSE_LOCATION`: ubicación **aproximada** (Wi-Fi/antenas).
   - Declarar un permiso **no basta**: la ubicación es "peligrosa" y también se pide en pantalla (ver `MapScreen.kt` L48-65).
 - **L10-14 `<application ...>`**: datos de la app.
-  - **L11** `allowBackup="true"`: permite copia de seguridad en la nube.
+  - **L11** `allowBackup="false"`: la app no se incluye en la copia de seguridad en la nube (buena práctica de seguridad).
   - **L12** `icon="@drawable/ic_launcher"`: ícono (el archivo `res/drawable/ic_launcher.xml`).
   - **L13** `label="GPS y Maps"`: nombre bajo el ícono.
   - **L14** `theme=...Theme.Material.Light.NoActionBar`: tema del sistema sin barra superior (Compose dibuja toda la interfaz).
@@ -234,11 +235,11 @@ Orden de explicación: de abajo hacia arriba (datos → GPS → lógica → pant
   - `suspend`: puede pausarse sin congelar la app.
   - `Location?`: devuelve una ubicación **o null**.
   - `= try {`: el `try` es una expresión; lo que devuelva es el resultado de la función.
-- **L22-25** `client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, CancellationTokenSource().token).await()`:
+- **L22-25** `val cts = CancellationTokenSource()` y `client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cts.token).await(cts)`:
   - pide una **lectura nueva** de ubicación;
   - `PRIORITY_HIGH_ACCURACY` = máxima precisión (GPS);
-  - `CancellationTokenSource().token` permite cancelar la petición;
-  - `.await()` pausa la corrutina hasta que Google responda y entrega el `Location`.
+  - `cts.token` permite cancelar la petición;
+  - `.await(cts)` pausa la corrutina hasta que Google responda y entrega el `Location`; si la corrutina se cancela (por ejemplo, se cierra la pantalla), **también cancela la petición al GPS**.
 - **L26-28** `} catch (e: Exception) { null }`: si algo falla (sin permiso, GPS apagado, etc.) devuelve `null` en vez de cerrar la app.
 - **L30-36** `getLastLocation()`: igual, pero con `client.lastLocation.await()`: la **última ubicación guardada en caché**. Es instantánea, pero puede ser `null` o vieja.
 - **L38** comentario: flujo continuo para el tracking.
@@ -323,7 +324,7 @@ El `Geocoder` de Android convierte texto en coordenadas (**geocodificación**) y
 - **L49** `repo.locationUpdates().collect { loc ->`: se suscribe al Flow; este bloque se ejecuta **cada vez** que llega una ubicación.
 - **L50** crea un `LatLng` con la ubicación recibida.
 - **L51** `_state.update { s ->`: actualiza el estado; `s` es el estado actual.
-- **L52** `val added = s.route.lastOrNull()?.let { distance(it, point) } ?: 0f`: calcula cuántos metros hay desde el **último punto de la ruta** hasta el nuevo; si la ruta está vacía, suma `0`.
+- **L52** `val added = s.route.lastOrNull()?.let { distanceMeters(it, point) } ?: 0f`: calcula cuántos metros hay desde el **último punto de la ruta** hasta el nuevo; si la ruta está vacía, suma `0`.
 - **L53-59** `s.copy(...)`:
   - **L54** `current = point`: nueva posición actual.
   - **L55** `route = s.route + point`: lista nueva con el punto agregado.
@@ -338,8 +339,8 @@ El `Geocoder` de Android convierte texto en coordenadas (**geocodificación**) y
 
 **`clearRoute()` (L71-73):** deja `route` vacía y `distanceMeters` en 0.
 
-**`companion object` (L75-82)**: lo que va aquí se usa **sin crear un objeto**: `MapViewModel.distance(a, b)`.
-- **L77** `fun distance(a: LatLng, b: LatLng): Float {`: distancia en metros entre dos puntos.
+**`distanceMeters(a, b)` (en `GeoUtils.kt`)**: función de nivel superior (no necesita objeto), con su test en `DistanceMetersTest`.
+- `fun distanceMeters(a: LatLng, b: LatLng): Float {`: distancia en metros entre dos puntos.
 - **L78** `val r = FloatArray(1)`: arreglo de 1 posición donde Android escribirá el resultado.
 - **L79** `Location.distanceBetween(...)`: calcula la distancia sobre la superficie de la Tierra (no en línea recta de plano) y la guarda en `r[0]`.
 - **L80** `return r[0]`.
@@ -363,7 +364,7 @@ Es el archivo más largo. Se divide en 3 zonas: **funciones de ayuda** (L27-40),
   - **L30-31** lo mismo para el permiso aproximado. Con **uno** de los dos basta.
   - `private` = solo se usa en este archivo.
 - **L33** comentario: acepta `"6.2676, -75.5685"` con punto decimal.
-- **L34** `private fun parseLatLng(text: String): LatLng? {`: convierte texto en coordenadas, o `null` si no son válidas.
+- **L34** `fun parseLatLng(text: String): LatLng? {` (ahora en `GeoUtils.kt`, probada en `ParseLatLngTest`): convierte texto en coordenadas, o `null` si no son válidas.
 - **L35** `val p = text.trim().split(Regex("[,;\\s]+")).filter { it.isNotEmpty() }`:
   - `trim()` quita espacios de los extremos;
   - `split(Regex("[,;\\s]+"))` parte el texto por **comas, punto y coma o espacios** (uno o más seguidos);
@@ -476,7 +477,7 @@ Es el archivo más largo. Se divide en 3 zonas: **funciones de ayuda** (L27-40),
 
 *Pestaña Tracking (L201-230)*
 - **L202-206** `Text("Distancia: %.0f m | Vel: %.1f km/h | Precisión: %.0f m".format(...), style = bodyMedium)`: muestra distancia, velocidad y precisión. `%.0f` = número con 0 decimales; `%.1f` = 1 decimal.
-- **L207-209** si hay 2 o más marcadores, muestra la distancia entre el 1.º y el 2.º usando `MapViewModel.distance`.
+- **L207-209** si hay 2 o más marcadores, muestra la distancia entre el 1.º y el 2.º usando `distanceMeters`.
 - **L210** `addressText?.let { Text("Último punto: $it") }`: si hay dirección, la muestra.
 - **L212** `Spacer(Modifier.height(8.dp))`: espacio vertical.
 - **L213** `Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {`: fila de botones separados 8 dp.

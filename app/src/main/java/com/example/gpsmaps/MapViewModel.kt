@@ -1,7 +1,6 @@
 package com.example.gpsmaps
 
 import android.app.Application
-import android.location.Location
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
@@ -49,7 +48,7 @@ class MapViewModel(app: Application) : AndroidViewModel(app) {
             repo.locationUpdates().collect { loc ->
                 val point = LatLng(loc.latitude, loc.longitude)
                 _state.update { s ->
-                    val added = s.route.lastOrNull()?.let { distance(it, point) } ?: 0f
+                    val added = s.route.lastOrNull()?.let { distanceMeters(it, point) } ?: 0f
                     s.copy(
                         current = point,
                         route = s.route + point,
@@ -70,14 +69,5 @@ class MapViewModel(app: Application) : AndroidViewModel(app) {
 
     fun clearRoute() {
         _state.update { it.copy(route = emptyList(), distanceMeters = 0f) }
-    }
-
-    companion object {
-        /** Distancia en metros entre dos puntos. */
-        fun distance(a: LatLng, b: LatLng): Float {
-            val r = FloatArray(1)
-            Location.distanceBetween(a.latitude, a.longitude, b.latitude, b.longitude, r)
-            return r[0]
-        }
     }
 }

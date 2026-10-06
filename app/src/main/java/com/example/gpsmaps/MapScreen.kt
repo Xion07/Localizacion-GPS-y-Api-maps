@@ -36,15 +36,6 @@ private fun hasLocationPermission(context: Context): Boolean =
     ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
         PackageManager.PERMISSION_GRANTED
 
-/** Acepta "6.2676, -75.5685" (punto como decimal). Si no es válido devuelve null. */
-private fun parseLatLng(text: String): LatLng? {
-    val p = text.trim().split(Regex("[,;\\s]+")).filter { it.isNotEmpty() }
-    if (p.size != 2) return null
-    val lat = p[0].toDoubleOrNull() ?: return null
-    val lng = p[1].toDoubleOrNull() ?: return null
-    return if (lat in -90.0..90.0 && lng in -180.0..180.0) LatLng(lat, lng) else null
-}
-
 @Composable
 fun MapScreen(vm: MapViewModel = viewModel()) {
     val context = LocalContext.current
@@ -265,7 +256,7 @@ fun MapScreen(vm: MapViewModel = viewModel()) {
                             style = MaterialTheme.typography.bodyMedium
                         )
                         if (markers.size >= 2) {
-                            Text("Punto 1 → Punto 2: %.0f m".format(MapViewModel.distance(markers[0], markers[1])))
+                            Text("Punto 1 → Punto 2: %.0f m".format(distanceMeters(markers[0], markers[1])))
                         }
                         addressText?.let { Text("Último punto: $it") }
                         if (!follow && state.current != null) {
@@ -309,7 +300,7 @@ fun MapScreen(vm: MapViewModel = viewModel()) {
                         if (revealed) Text("📍 ${place.name}")
                         target?.let { t ->
                             markers.lastOrNull()?.let { guess ->
-                                Text("Tu marcador quedó a %.0f m del objetivo".format(MapViewModel.distance(guess, t)))
+                                Text("Tu marcador quedó a %.0f m del objetivo".format(distanceMeters(guess, t)))
                             }
                         }
 
