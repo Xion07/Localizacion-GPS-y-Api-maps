@@ -108,8 +108,10 @@ fun MapScreen(vm: MapViewModel = viewModel()) {
 
     // Alto de las tarjetas para que el mapa no ponga controles ni el logo de Google debajo
     val density = LocalDensity.current
-    var topPadding by remember { mutableStateOf(0.dp) }
-    var bottomPadding by remember { mutableStateOf(0.dp) }
+    var topCardHeight by remember { mutableStateOf(0.dp) }
+    var bottomCardHeight by remember { mutableStateOf(0.dp) }
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     // La cámara sigue al usuario solo en la pestaña de tracking
     LaunchedEffect(state.current) {
@@ -126,7 +128,10 @@ fun MapScreen(vm: MapViewModel = viewModel()) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraState,
-            contentPadding = PaddingValues(top = topPadding, bottom = bottomPadding),
+            contentPadding = PaddingValues(
+                top = statusBarTop + 12.dp + topCardHeight,
+                bottom = navBarBottom + 12.dp + bottomCardHeight
+            ),
             properties = MapProperties(
                 isMyLocationEnabled = hasPermission,   // punto azul
                 mapType = mapType
@@ -192,7 +197,7 @@ fun MapScreen(vm: MapViewModel = viewModel()) {
                 .statusBarsPadding()
                 .padding(12.dp)
                 .fillMaxWidth()
-                .onSizeChanged { topPadding = with(density) { it.height.toDp() } + 12.dp }
+                .onSizeChanged { topCardHeight = with(density) { it.height.toDp() } }
         ) {
             Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
@@ -225,7 +230,7 @@ fun MapScreen(vm: MapViewModel = viewModel()) {
                 .navigationBarsPadding()
                 .padding(12.dp)
                 .fillMaxWidth()
-                .onSizeChanged { bottomPadding = with(density) { it.height.toDp() } + 12.dp }
+                .onSizeChanged { bottomCardHeight = with(density) { it.height.toDp() } }
         ) {
             Column {
                 TabRow(selectedTabIndex = tab) {
